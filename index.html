@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload and Controls</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .controls, .file-links {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 10px;
+        }
+        .file-links {
+            left: auto;
+            right: 10px;
+        }
+        .file-links div {
+            margin-bottom: 10px;
+        }
+        .file-links button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Files</h1>
+        <form id="uploadMusicForm" enctype="multipart/form-data">
+            <label for="music">Upload Music:</label>
+            <input type="file" id="music" name="music" accept="audio/*">
+            <button type="submit">Upload Music</button>
+        </form>
+
+        <form id="uploadScriptForm" enctype="multipart/form-data">
+            <label for="script">Upload Script:</label>
+            <input type="file" id="script" name="script" accept=".txt">
+            <button type="submit">Upload Script</button>
+        </form>
+
+        <div class="controls">
+            <label for="volume">Volume:</label>
+            <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
+            <label for="speed">Speed:</label>
+            <input type="range" id="speed" min="0.5" max="3" step="0.1" value="1">
+            <label for="pitch">Pitch:</label>
+            <input type="checkbox" id="pitch">
+        </div>
+
+        <div class="file-links" id="file-links"></div>
+    </div>
+
+<script>
+
+document.getElementById('uploadMusicForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    try {
+        const response = await fetch('http://localhost:3000/upload/music', {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) throw new Error('Upload failed');
+        const result = await response.json();
+        addFileLink('Music', result.fileUrl);
+    } catch (error) {
+        alert('Error uploading music: ' + error.message);
+    }
+});
+
+document.getElementById('uploadScriptForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    try {
+        const response = await fetch('http://localhost:3000/upload/script', {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) throw new Error('Upload failed');
+        const result = await response.json();
+        addFileLink('Script', result.fileUrl);
+    } catch (error) {
+        alert('Error uploading script: ' + error.message);
+    }
+});
+
+    function addFileLink(label, url) {
+        const linkDiv = document.createElement('div');
+        linkDiv.innerHTML = `
+            <span>${label}: </span>
+            <a href="${url}" target="_blank">${url}</a>
+            <button onclick="copyLink('${url}')">Copy Link</button>
+        `;
+        document.getElementById('file-links').appendChild(linkDiv);
+    }
+
+    function copyLink(url) {
+        navigator.clipboard.writeText(url)
+            .then(() => alert('Link copied to clipboard'))
+            .catch(err => alert('Failed to copy link: ' + err));
+    }
+
+    // Volume Control
+    document.getElementById('volume').addEventListener('input', function () {
+        const volume = this.value;
+        document.querySelectorAll('audio').forEach(audio => audio.volume = volume);
+    });
+
+    // Speed Control
+    document.getElementById('speed').addEventListener('input', function () {
+        const speed = this.value;
+        document.querySelectorAll('audio').forEach(audio => audio.playbackRate = speed);
+    });
+
+    // Pitch Control
+    document.getElementById('pitch').addEventListener('change', function () {
+        const pitch = this.checked ? 1.5 : 1;
+        document.querySelectorAll('audio').forEach(audio => audio.playbackRate = pitch);
+    });
+</script>
+</body>
+</html>
